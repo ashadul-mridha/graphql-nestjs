@@ -11,7 +11,7 @@ import { MysqlProvider } from "./providers/database/mysql.provider";
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      path: '/api',
+      path: "/graphql",
       autoSchemaFile: join(process.cwd(), "src/schema.gql"),
       sortSchema: true,
       playground: true,
