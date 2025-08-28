@@ -1,11 +1,12 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Field, ID, ObjectType } from "@nestjs/graphql";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity } from "../../../common/entities/base.entity";
 
 @ObjectType()
-@Entity('todos')
-export class TodoEntity {
+@Entity("todos")
+export class TodoEntity extends BaseEntity {
   @Field(() => ID)
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Field()
@@ -19,12 +20,4 @@ export class TodoEntity {
   @Field()
   @Column({ default: false })
   completed: boolean;
-
-  @Field()
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field()
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
