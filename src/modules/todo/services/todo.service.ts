@@ -1,18 +1,21 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, MoreThan, LessThan } from "typeorm";
+import { Repository } from "typeorm";
 import { CreateTodoDto } from "../dto/create-todo.dto";
-import { UpdateTodoDto } from "../dto/update-todo.dto";
-import { PaginationInput } from "../dto/pagination.dto";
+import {
+  GetTodoOffsetPaginateDto,
+  PaginatedTodosOffset,
+} from "../dto/offset-pagination.dto";
 import { PaginatedTodos, TodoEdge } from "../dto/paginated-todos.dto";
-import { GetTodoOffsetPaginateDto, PaginatedTodosOffset } from "../dto/offset-pagination.dto";
+import { PaginationInput } from "../dto/pagination.dto";
+import { UpdateTodoDto } from "../dto/update-todo.dto";
 import { TodoEntity } from "../entities/todo.entity";
 
 @Injectable()
 export class TodoService {
   constructor(
     @InjectRepository(TodoEntity)
-    private todoRepository: Repository<TodoEntity>,
+    private todoRepository: Repository<TodoEntity>
   ) {}
 
   async create(createTodoInput: CreateTodoDto): Promise<TodoEntity> {
@@ -24,45 +27,53 @@ export class TodoService {
     return await this.todoRepository.find();
   }
 
-  async findAllPaginated(pagination?: PaginationInput): Promise<PaginatedTodos> {
+  async findAllPaginated(
+    pagination?: PaginationInput
+  ): Promise<PaginatedTodos> {
     const { cursor, first, last } = pagination || {};
     const limit = first || last || 10;
-    
+
     let query = this.todoRepository.createQueryBuilder("todo");
-    
+
     if (cursor) {
-      const cursorTodo = await this.todoRepository.findOne({ where: { id: cursor } });
+      const cursorTodo = await this.todoRepository.findOne({
+        where: { id: cursor },
+      });
       if (!cursorTodo) {
         throw new NotFoundException(`Todo with cursor ID ${cursor} not found`);
       }
-      
+
       if (first) {
-        query = query.where("todo.createdAt > :cursorDate", { cursorDate: cursorTodo.createdAt });
+        query = query.where("todo.createdAt > :cursorDate", {
+          cursorDate: cursorTodo.createdAt,
+        });
         query = query.orderBy("todo.createdAt", "ASC");
       } else if (last) {
-        query = query.where("todo.createdAt < :cursorDate", { cursorDate: cursorTodo.createdAt });
+        query = query.where("todo.createdAt < :cursorDate", {
+          cursorDate: cursorTodo.createdAt,
+        });
         query = query.orderBy("todo.createdAt", "DESC");
       }
     } else {
       query = query.orderBy("todo.createdAt", first ? "ASC" : "DESC");
     }
-    
+
     query = query.limit(limit + 1);
     const todos = await query.getMany();
-    
+
     const hasNextPage = todos.length > limit;
     const hasPreviousPage = Boolean(cursor);
-    
+
     const nodes = hasNextPage ? todos.slice(0, -1) : todos;
     if (last && !cursor) {
       nodes.reverse();
     }
-    
+
     const edges: TodoEdge[] = nodes.map((todo) => ({
       cursor: todo.id,
       node: todo,
     }));
-    
+
     return {
       edges,
       pageInfo: {
@@ -74,16 +85,18 @@ export class TodoService {
     };
   }
 
-  async findAllWithOffset(pagination?: GetTodoOffsetPaginateDto): Promise<PaginatedTodosOffset> {
+  async findAllWithOffset(
+    pagination?: GetTodoOffsetPaginateDto
+  ): Promise<PaginatedTodosOffset> {
     const { currentPage = 1, perPage = 10 } = pagination || {};
     const offset = (currentPage - 1) * perPage;
-    
+
     const [todos, total] = await this.todoRepository.findAndCount({
       skip: offset,
       take: perPage,
       order: { createdAt: "DESC" },
     });
-    
+
     return {
       todos,
       total,
@@ -100,7 +113,10 @@ export class TodoService {
     return todo;
   }
 
-  async update(id: string, updateTodoInput: UpdateTodoDto): Promise<TodoEntity> {
+  async update(
+    id: string,
+    updateTodoInput: UpdateTodoDto
+  ): Promise<TodoEntity> {
     const todo = await this.findOne(id);
     Object.assign(todo, updateTodoInput);
     return await this.todoRepository.save(todo);
