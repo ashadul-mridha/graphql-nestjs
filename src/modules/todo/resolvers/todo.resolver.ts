@@ -1,6 +1,9 @@
 import { Args, ID, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { CreateTodoDto } from "../dto/create-todo.dto";
 import { UpdateTodoDto } from "../dto/update-todo.dto";
+import { PaginationInput } from "../dto/pagination.dto";
+import { PaginatedTodos } from "../dto/paginated-todos.dto";
+import { GetTodoOffsetPaginateDto, PaginatedTodosOffset } from "../dto/offset-pagination.dto";
 import { TodoEntity } from "../entities/todo.entity";
 import { TodoService } from "../services/todo.service";
 
@@ -15,9 +18,18 @@ export class TodoResolver {
     return this.todoService.create(createTodoInput);
   }
 
-  @Query(() => [TodoEntity], { name: "todos" })
-  findAll(): Promise<TodoEntity[]> {
-    return this.todoService.findAll();
+  @Query(() => PaginatedTodos, { name: "todos" })
+  findAll(
+    @Args("pagination", { nullable: true }) pagination?: PaginationInput
+  ): Promise<PaginatedTodos> {
+    return this.todoService.findAllPaginated(pagination);
+  }
+
+  @Query(() => PaginatedTodosOffset, { name: "todosOffset" })
+  findAllOffset(
+    @Args("pagination", { nullable: true }) pagination?: GetTodoOffsetPaginateDto
+  ): Promise<PaginatedTodosOffset> {
+    return this.todoService.findAllWithOffset(pagination);
   }
 
   @Query(() => TodoEntity, { name: "todo" })
