@@ -5,6 +5,7 @@ import { GraphQLModule } from "@nestjs/graphql";
 import { join } from "path";
 import { AppController } from "./app.controller";
 import { TodoModule } from "./modules/todo/todo.module";
+import { UserModule } from "./modules/user/user.module";
 import { MysqlProvider } from "./providers/database/mysql.provider";
 
 @Module({
@@ -22,6 +23,7 @@ import { MysqlProvider } from "./providers/database/mysql.provider";
       isGlobal: true,
     }),
     TodoModule,
+    UserModule,
   ],
   controllers: [AppController],
 })
